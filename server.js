@@ -3,16 +3,35 @@ const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 require('dotenv').config();
 
+// Debug logging
+console.log('🚀 Server starting...');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('PORT:', process.env.PORT);
+console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 const prisma = new PrismaClient();
 
+console.log('📡 Server will run on port:', PORT);
+
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: ['http://localhost:5173', 'https://your-frontend.netlify.app'],
   credentials: true
 }));
 app.use(express.json());
+
+// Health check route
+app.get('/health', (req, res) => {
+  console.log('✅ Health check called');
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    port: PORT,
+    database: 'checking...'
+  });
+});
 
 app.post('/api/register', async (req, res) => {
   try {
@@ -93,19 +112,23 @@ app.post('/api/login', async (req, res) => {
 const checkMongoDB = async () => {
   try {
     await prisma.$connect();
-    await prisma.event.count();
+    const count = await prisma.event.count();
+    console.log('✅ MongoDB connected, event count:', count);
     return true;
   } catch (error) {
+    console.error('❌ MongoDB connection failed:', error.message);
     return false;
   }
 };
 
 // Routes
 app.get('/', (req, res) => {
+  console.log('📍 Root route called');
   res.json({ message: 'Event Planning API is working!' });
 });
 
 app.get('/test-db', async (req, res) => {
+  console.log('🔍 Testing database connection...');
   const isConnected = await checkMongoDB();
   if (isConnected) {
     const eventCount = await prisma.event.count();
@@ -151,27 +174,6 @@ app.delete('/api/events/:id', async (req, res) => {
   }
 });
 
-// Start server
-const startServer = async () => {
-  const isConnected = await checkMongoDB();
-  
-  app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-    if (isConnected) {
-      console.log('MongoDB connected');
-    } else {
-      console.log('MongoDB not connected - need to whitelist IP');
-    }
-  });
-};
-
-startServer();
-
-process.on('SIGINT', async () => {
-  await prisma.$disconnect();
-  process.exit(0);
-});
-
 // Update event route
 app.put('/api/events/:id', async (req, res) => {
   try {
@@ -199,4 +201,27 @@ app.put('/api/events/:id', async (req, res) => {
     console.error('❌ Error updating event:', error.message);
     res.status(500).json({ error: error.message });
   }
+});
+
+// Start server
+const startServer = async () => {
+  console.log('🔌 Checking MongoDB connection...');
+  const isConnected = await checkMongoDB();
+  
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log('🎉 Server running on port:', PORT);
+    console.log('📍 Local: http://localhost:' + PORT);
+    if (isConnected) {
+      console.log('✅ MongoDB connected');
+    } else {
+      console.log('❌ MongoDB not connected - need to whitelist IP');
+    }
+  });
+};
+
+startServer();
+
+process.on('SIGINT', async () => {
+  await prisma.$disconnect();
+  process.exit(0);
 });
