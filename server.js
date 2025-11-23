@@ -2,12 +2,38 @@ const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Basic route that CANNOT fail
-app.get('*', (req, res) => {
+// Basic middleware
+app.use(express.json());
+
+// Specific routes first
+app.get('/health', (req, res) => {
   res.json({ 
-    message: 'IT WORKS!', 
-    path: req.path,
+    status: 'OK', 
+    message: 'Health check working!',
     timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Server is running!',
+    availableRoutes: ['/health', '/test']
+  });
+});
+
+app.get('/test', (req, res) => {
+  res.json({ 
+    message: 'Test route working!',
+    path: req.path
+  });
+});
+
+// Catch-all route (must be last)
+app.use((req, res) => {
+  res.json({ 
+    message: 'Route not found, but server is working!',
+    requestedPath: req.path,
+    availableRoutes: ['/', '/health', '/test']
   });
 });
 
@@ -16,4 +42,4 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
 
-console.log('🚀 Starting simplest possible server...');
+console.log('🚀 Starting server...');
