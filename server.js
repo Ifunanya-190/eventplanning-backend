@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://crostata-b0948a.netlify.app'],
+  origin: '*',  // Allow all domains including your Netlify app
   credentials: true
 }));
 app.use(express.json());
