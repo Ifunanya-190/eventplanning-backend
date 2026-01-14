@@ -10,6 +10,7 @@ const prisma = new PrismaClient();
 // Middleware
 app.use(cors({
   origin: [
+    'https://roaring-malabi-c1931e.netlify.app',
     'https://comforting-maamoul-e72b49.netlify.app',
     'https://roaring-malabi-c1d6b3.netlify.app', 
     'http://localhost:5173', 
