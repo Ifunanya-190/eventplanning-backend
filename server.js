@@ -9,7 +9,12 @@ const prisma = new PrismaClient();
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5000'],
+  origin: [
+    'https://comforting-maamoul-e72b49.netlify.app',
+    'https://roaring-malabi-c1d6b3.netlify.app', 
+    'http://localhost:5173', 
+    'http://localhost:5000'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -46,8 +51,14 @@ app.post('/api/register', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Registration error:', error.message);
+    
+    // Handle duplicate email error
+    if (error.code === 'P2002') {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
+    
+    res.status(500).json({ error: error.message || 'Internal server error' });
   }
 });
 
@@ -86,8 +97,8 @@ app.post('/api/login', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Login error:', error.message);
+    res.status(500).json({ error: error.message || 'Internal server error' });
   }
 });
 
